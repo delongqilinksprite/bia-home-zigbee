@@ -41,6 +41,10 @@ if __name__ == '__main__':
 			msg = zigbee.remove(handle)
 			print msg
 			main()
+		if sys.argv[1] == 'add_tmp_hum':
+			msg = zigbee.add_tmp_hum()
+			print msg
+			main()
 		else:
 			main()
 	except KeyboardInterrupt:

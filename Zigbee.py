@@ -19,7 +19,7 @@ class Zigbee:
 	def __init__(self,dev,debug):
 		self.debug = debug
 		self.dev = dev
-		self.version = '0.1'
+		self.version = '0.2'
 		ser = serial.Serial(self.dev, 115200,timeout = 1)
 		if ser.isOpen() == True:
 			if self.debug == 1:
@@ -92,7 +92,55 @@ class Zigbee:
 				if self.debug == 1:
 					print "set target success!"
 				return '0'
-				
+		
+	def set_target_tmp(self,handle):
+		start = datetime.datetime.now()
+		send = "0c fc 02 01 04 01 01 01 02"+handle+"02 0a"
+		s = send.replace(' ','')
+		a=binascii.a2b_hex(s)
+		while True:
+			self.ser.write(a)
+			try:
+				recv=self.ser.readline()
+			except Exception:
+				recv = '0'
+			rec=self.hexShow(recv)
+			finsh = datetime.datetime.now()
+			tim = (finsh - start).seconds
+			if tim > 5:
+				if self.debug == 1:
+					print "set target to tmp timeout!"
+				return '1'
+			a = rec.find("04 fd 02 01",0)
+			if a != -1:
+				if self.debug == 1:
+					print "set target to tmp success!"
+				return '0'
+
+	def set_target_hum(self,handle):
+		start = datetime.datetime.now()
+		send = "0c fc 02 01 04 01 01 02 02"+handle+"02 0a"
+		s = send.replace(' ','')
+		a=binascii.a2b_hex(s)
+		while True:
+			self.ser.write(a)
+			try:
+				recv=self.ser.readline()
+			except Exception:
+				recv = '0'
+			rec=self.hexShow(recv)
+			finsh = datetime.datetime.now()
+			tim = (finsh - start).seconds
+			if tim > 5:
+				if self.debug == 1:
+					print "set target to hum timeout!"
+				return '1'
+			a = rec.find("04 fd 02 01",0)
+			if a != -1:
+				if self.debug == 1:
+					print "set target to hum success!"
+				return '0'
+			
 	# Function:get gateway mac address
 	def gateway_mac(self):
 		start = datetime.datetime.now()
@@ -142,7 +190,55 @@ class Zigbee:
 				if self.debug == 1:
 					print "bind success!"
 				return '0'
-				
+
+	def bind_tmp(self,eq_mac,gat_mac):
+		start = datetime.datetime.now()
+		send = "16 d8"+eq_mac+"01 02 04 03"+gat_mac+"01"
+		s = send.replace(' ','')
+		a=binascii.a2b_hex(s)
+		while True:
+			self.ser.write(a)
+			try:
+				recv=self.ser.readline()
+			except Exception:
+				recv = '0'
+			rec=self.hexShow(recv)
+			finsh = datetime.datetime.now()
+			tim = (finsh - start).seconds
+			if tim > 8:
+				if self.debug == 1:
+					print "bind tmp timeout!"
+				return '1'
+			b = rec.find("02 d9 00")
+			if b != -1:
+				if self.debug == 1:
+					print "bind tmp success!"
+				return '0'
+
+	def bind_hum(self,eq_mac,gat_mac):
+		start = datetime.datetime.now()
+		send = "16 d8"+eq_mac+"02 05 04 03"+gat_mac+"01"
+		s = send.replace(' ','')
+		a=binascii.a2b_hex(s)
+		while True:
+			self.ser.write(a)
+			try:
+				recv=self.ser.readline()
+			except Exception:
+				recv = '0'
+			rec=self.hexShow(recv)
+			finsh = datetime.datetime.now()
+			tim = (finsh - start).seconds
+			if tim > 8:
+				if self.debug == 1:
+					print "bind hum timeout!"
+				return '1'
+			b = rec.find("02 d9 00")
+			if b != -1:
+				if self.debug == 1:
+					print "bind hum success!"
+				return '0'
+	
 	# Function:cluster
 	def cluster(self):
 		start = datetime.datetime.now()
@@ -196,7 +292,59 @@ class Zigbee:
 					if self.debug == 1:
 						print "report success!"
 					return '0'
-	
+
+	def report_tmp(self):
+		start = datetime.datetime.now()
+		send = "11 FC 00 02 04 06 01 00 00 00 29 05 00 05 00 01 00 00"
+		s = send.replace(' ','')
+		a=binascii.a2b_hex(s)
+		while True:
+			self.ser.write(a)
+			try:
+				recv=self.ser.readline()
+			except Exception:
+				recv = '0'
+			rec=self.hexShow(recv)
+			leng = len(rec)
+			finsh = datetime.datetime.now()
+			tim = (finsh - start).seconds
+			if tim > 5:
+				if self.debug == 1:
+					print "report tmp timeout!"
+				return '1'
+			if leng > 15:
+				b = rec.find("06 fd 00")
+				if b != -1:
+					if self.debug == 1:
+						print "report tmp success!"
+					return '0'
+
+	def report_hum(self):
+		start = datetime.datetime.now()
+		send = "11 FC 00 05 04 06 01 00 00 00 21 05 00 05 00 01 00 00"
+		s = send.replace(' ','')
+		a=binascii.a2b_hex(s)
+		while True:
+			self.ser.write(a)
+			try:
+				recv=self.ser.readline()
+			except Exception:
+				recv = '0'
+			rec=self.hexShow(recv)
+			leng = len(rec)
+			finsh = datetime.datetime.now()
+			tim = (finsh - start).seconds
+			if tim > 5:
+				if self.debug == 1:
+					print "report hum timeout!"
+				return '1'
+			if leng > 15:
+				b = rec.find("06 fd 00")
+				if b != -1:
+					if self.debug == 1:
+						print "report hum success!"
+					return '0'
+					
 	# config battery level report time				
 	def config(self,handle,tim):
 		mm = {}
@@ -268,6 +416,8 @@ class Zigbee:
 		if leng >= 30:
 			po = val.find("fe 01")
 			pz = val.find("00 21 00 20")
+			pa = val.find("01 02",0)
+			pb = val.find("02 02",0)
 			try:
 				if po != -1:
 					handle = val[po+21:po+26]
@@ -290,6 +440,30 @@ class Zigbee:
 					mm["handle"] = handle
 					mm["value"] = level
 					msg = json.dumps(mm) 
+					if self.debug == 1:
+						print msg
+					return msg
+				if pa != -1:
+					tmp = val[a+39:a+44].replace(' ','')
+					t = "0x" + tmp[2:4] + tmp[0:2]
+					temp = int(t,16)
+					tem = temp/100.0
+					mm["msg"] = "temperature"
+					#mm["handle"] = handle
+					mm["value"] = tem
+					msg = json.dumps(mm)
+					if self.debug == 1:
+						print msg
+					return msg
+				if pb != -1:
+					hum = val[b+39:b+44].replace(' ','')
+					h= "0x" + hum[2:4] + hum[0:2]
+					temp = int(h,16)
+					hum = temp/100.0
+					mm["msg"] = "humidity"
+					#mm["handle"] = handle
+					mm["value"] = hum
+					msg = json.dumps(mm)
 					if self.debug == 1:
 						print msg
 					return msg
@@ -333,4 +507,42 @@ class Zigbee:
 				print msg
 			return msg
 
+	def add_tmp_hum(self):
+		mm = {}
+		val=self.register()
+		if val != 1:
+			short = val[0:5]
+			mac = val[6:29]
+			mac = mac.replace(' ','')
+			short = short.replace(' ','')
+			gatmac = self.gateway_mac()
+			gatmac = gatmac.replace(' ','')
+			if gatmac != '1':
+				gatemac = gatmac
+				a = self.set_target_tmp(short)
+				if a != '1':
+					b = self.bind_tmp(mac,gatemac)
+					if b != '1':
+						c = self.report_tmp()
+						if c != '1':
+							d = self.set_target_tmp(short)
+							if d != '1':
+								e = self.bind_tmp(mac,gatemac)
+								if e != '1':
+									f = self.report_tmp()
+									if f != '1':
+										mm["handle"] = short
+										mm["mac"] = mac 
+										mm["gatewaymac"] = gatmac
+										msg = json.dumps(mm);
+										if self.debug == 1:
+											print "add sensor ok"
+											print msg
+										return msg
+		mm["message"] = "failed"
+		msg = json.dumps(mm)
+		if self.debug == 1:
+			print msg
+		return msg
+		
 # End of Zigbee.py module	
